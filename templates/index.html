@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pizarra distribuida</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4/socket.io.min.js"></script>
+    <script src="https://drawio.github.io/embed.js"></script>
+    <script>
+        const socket = io();
+        let room = prompt('Ingrese el nombre de la sala:');
+        socket.emit('join_room', {room: room});
+
+        const drawio = new Drawio({
+            container: '#drawio-container',
+            initialXml: '',
+        });
+
+        socket.on('draw', (xml) => {
+            drawio.loadXml(xml);
+        });
+
+        drawio.on('xml', (xml) => {
+            socket.emit('draw', {room: room, xml: xml});
+        });
+
+        socket.on('user_status', (data) => {
+            document.getElementById('user-list').innerHTML = '';
+            data.users.forEach((user) => {
+                const li = document.createElement('li');
+                li.textContent = user;
+                document.getElementById('user-list').appendChild(li);
+            });
+        });
+
+        window.onbeforeunload = function () {
+            socket.emit('leave_room', {room: room});
+        };
+    </script>
+</head>
+<body>
+<div id="drawio-container"></div>
+<ul id="user-list"></ul>
+</body>
+</html>
